@@ -44,10 +44,15 @@ set_target_properties(mupdf-third PROPERTIES
         IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/mupdf-src/build/release/libmupdf-third.a
 )
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_compile_definitions(roview DEBUG)
+endif ()
+
 set(SRCS
         main.c
         renderer.c
         pdfpage.c
+        log.c
 )
 add_executable(roview ${SRCS})
 target_link_libraries(roview PRIVATE raylib mupdf mupdf-third)

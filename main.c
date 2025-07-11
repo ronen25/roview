@@ -8,6 +8,7 @@
 
 #include "renderer.h"
 #include "pdfpage.h"
+#include "log.h"
 
 typedef struct {
     PDFRenderer *pdf_renderer;
@@ -28,9 +29,9 @@ void RenderCurrentPage(PDFViewer *viewer);
 
 PDFViewer* CreatePDFViewer(const char *filename, int width, int height) {
     PDFViewer *viewer = malloc(sizeof(PDFViewer));
-    if (!viewer) return NULL;
-
-    memset(viewer, 0, sizeof(PDFViewer));
+    if (!viewer) {
+        return NULL;
+    }
 
     viewer->window_width = width;
     viewer->window_height = height;
@@ -39,7 +40,7 @@ PDFViewer* CreatePDFViewer(const char *filename, int width, int height) {
     viewer->page_rendered = false;
 
     // Initialize PDF renderer
-    printf("Debug: Initializing PDF renderer for file: %s\n", filename);
+    RoLog("Debug: Initializing PDF renderer for file: %s\n", filename);
     viewer->pdf_renderer = PDFRendererNew(filename);
     if (!viewer->pdf_renderer) {
         printf("Error: Failed to create PDF renderer\n");
@@ -48,17 +49,16 @@ PDFViewer* CreatePDFViewer(const char *filename, int width, int height) {
     }
 
     viewer->total_pages = PDFRendererGetPageCount(viewer->pdf_renderer);
-    printf("Debug: PDF loaded successfully - %d pages\n", viewer->total_pages);
+    RoLog("Debug: PDF loaded successfully - %d pages\n", viewer->total_pages);
 
     if (viewer->total_pages <= 0) {
-        printf("Error: PDF has no pages\n");
+        fprintf(stderr, "Error: PDF has no pages\n");
         PDFRendererFree(viewer->pdf_renderer);
         free(viewer);
         return NULL;
     }
 
-    // Render initial page
-    printf("Debug: Rendering initial page\n");
+    RoLog("Debug: Rendering initial page\n");
     RenderCurrentPage(viewer);
 
     return viewer;
@@ -71,7 +71,7 @@ void RenderCurrentPage(PDFViewer *viewer) {
         viewer->current_page.texture.id = 0;
     }
 
-    printf("Debug: Rendering page %d at default zoom to get dimensions\n", viewer->current_page_index);
+    RoLog("Debug: Rendering page %d at default zoom to get dimensions\n", viewer->current_page_index);
 
     // Set zoom to 1.0 first to get base dimensions
     PDFRendererSetZoom(viewer->pdf_renderer, 1.0f);
@@ -81,15 +81,15 @@ void RenderCurrentPage(PDFViewer *viewer) {
                                                        &original_width, &original_height, &stride);
 
     if (!temp_data) {
-        printf("Error: Failed to render page %d at default zoom\n", viewer->current_page_index);
+        fprintf(stderr, "Error: Failed to render page %d at default zoom\n", viewer->current_page_index);
         return;
     }
 
-    printf("Debug: Original page dimensions: %dx%d\n", original_width, original_height);
+    RoLog("Debug: Original page dimensions: %dx%d\n", original_width, original_height);
     free(temp_data); // Free the temporary render data
 
     float zoom = (float)(viewer->window_width - 20) / (float)original_width; // 20px padding
-    printf("Debug: Calculated zoom factor: %.2f\n", zoom);
+    RoLog("Debug: Calculated zoom factor: %.2f\n", zoom);
 
     PDFRendererSetZoom(viewer->pdf_renderer, zoom);
 
@@ -99,16 +99,16 @@ void RenderCurrentPage(PDFViewer *viewer) {
         viewer->current_page_index, &width, &height, &stride);
 
     if (!data) {
-        printf("Error: Failed to render page %d at zoom %.2f\n", viewer->current_page_index, zoom);
+        fprintf(stderr, "Error: Failed to render page %d at zoom %.2f\n", viewer->current_page_index, zoom);
         return;
     }
 
-    printf("Debug: Final rendered page size: %dx%d at zoom %.2f\n", width, height, zoom);
+    RoLog("Debug: Final rendered page size: %dx%d at zoom %.2f\n", width, height, zoom);
 
     // Create a copy of the data for Raylib
     unsigned char *texture_data = malloc(width * height * 3);
     if (!texture_data) {
-        printf("Error: Failed to allocate texture data\n");
+        fprintf(stderr, "Error: Failed to allocate texture data\n");
         free(data);
         return;
     }
@@ -128,7 +128,7 @@ void RenderCurrentPage(PDFViewer *viewer) {
     viewer->current_page.height = height;
     viewer->page_rendered = true;
 
-    printf("Debug: Texture created successfully - ID: %d\n", viewer->current_page.texture.id);
+    RoLog("Debug: Texture created successfully - ID: %d\n", viewer->current_page.texture.id);
 
     free(texture_data);
     free(data);

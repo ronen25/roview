@@ -44,7 +44,7 @@ set_target_properties(mupdf-third PROPERTIES
         IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/mupdf-src/build/release/libmupdf-third.a
 )
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_compile_definitions(roview DEBUG)
 endif ()
 
